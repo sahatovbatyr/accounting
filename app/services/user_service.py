@@ -1,8 +1,10 @@
+from typing import List
+
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.db_config import get_db
-from app.models.model import User
+from app.models.model import User, UserRole
 from app.repositories.user_reopsitory import UserRepository
 from app.schemas.user_scheme import UserCreateDto, UserShowDto
 from app.services.user_role_service import UserRoleService
@@ -41,5 +43,25 @@ class UserService:
         user.username = userCreateDto.username
         user = self.user_repository.create( user )
         return user
+
+
+    def change_password(self, user: User, new_password: str):
+        user_db = self.user_repository.get_by_id(user.id)
+
+        if user_db.password != user.password:
+            raise HTTPException(400, "Username or password is wrong.")
+
+        user_db = self.user_repository.change_password( user, new_password)
+        return user_db
+
+    def update_roles(self, user: User, new_roles:List[UserRole]):
+        new_roles = self.user_role_service.get_by_id_list(new_roles)
+
+        if len(new_roles) == 0:
+            raise HTTPException(400, "Users must have at  least one role.")
+        user_db = self.user_repository.update_roles( user, new_roles)
+        return user_db
+
+
 
 
